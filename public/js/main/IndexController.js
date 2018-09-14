@@ -14,8 +14,57 @@ export default function IndexController(container) {
 IndexController.prototype._registerServiceWorker = function() {
   if (!navigator.serviceWorker) return;
 
-  navigator.serviceWorker.register('/sw.js').then(function() {
+  navigator.serviceWorker.register('/sw.js').then(function(reg) {
     console.log('Registration worked!');
+    reg.unregister(); // Unregister the service worker
+    reg.update(); // update the service worker with the latest installed service worker
+    reg.installing; // That's tell us that updates is on its way although it might be thrown away if fails
+    reg.waiting; // There is an update and SW is ready to take over
+    reg.active; // SW is in active state. 
+    // EMIT an event when new update is found
+    reg.addEventListener('updateFound', function() {
+      // reg.installing has changed and becomes new SW
+    });
+
+    // We can also look at their state
+    var sw = reg.installing;
+    console.log(sw.state); // logs installing i.e install event fired but hasnt yet completed
+    // state can also be
+    // 'installed'  -> installation complete but hasnt yet activated
+    // 'activating' -> activate event is fired but hasnt yet completed or activated
+    // 'activated'  -> SW is ready to receive fetch events
+    // 'redudant'   -> SW has been thrown away
+    
+    // sw fires an event 'statechange' whenver the state of reg object changes
+    sw.addEventListener('statechange', function() {
+      // sw.state has been changed
+    });
+
+    navigator.serviceWorker.controller; // refers to SW that control the page 
+    // if there is no controller that mean: page didnt load using the SW if fetch from network
+
+    if (reg.waiting) {
+      // there's an update ready
+      // tell the user
+    }
+    if (reg.installing) {
+      // there's an update in progress
+    }
+    // it may be fail to check this we add an event to installing state and check for change in state
+    reg.installing.addEventListener('statechange', function() {
+      if (this.state === 'installed') {
+        // there's an update ready
+      }
+    });
+    // otherwise we check for update found event and check the state of installing
+    reg.addEventListener('updatefound', function() {
+      reg.installing.addEventListener('statechange', function() {
+        if (this.state === 'installed') {
+          // there's an update ready
+        }
+      });
+    });
+
   }).catch(function() {
     console.log('Registration failed!');
   });
